@@ -1,0 +1,111 @@
+export XDG_CONFIG_HOME=$HOME/.config
+VIM="nvim"
+
+PERSONAL=$XDG_CONFIG_HOME/personal
+
+if [ -d "$PERSONAL" ]; then
+    if [ -f "$PERSONAL/env" ]; then
+        source "$PERSONAL/env"
+    fi
+    for i in `find -L "$PERSONAL"`; do
+        if [ -f "$i" ]; then
+            source "$i"
+        fi
+    done
+fi
+source /usr/share/doc/fzf/examples/key-bindings.zsh
+source /usr/share/doc/fzf/examples/completion.zsh
+
+export CC="clang-18"
+export CXX="clang++-18"
+export GIT_EDITOR=$VIM
+export DENO_INSTALL="$HOME/.deno"
+export DOTFILES=$HOME/.dotfiles
+export BUN_INSTALL="$HOME/.bun"
+
+addToPathFront() {
+    if [ -d "$1" ] && [[ ":$PATH:" != *":$1:"* ]]; then
+        export PATH="$1:$PATH"
+    fi
+}
+
+addToPathFront $HOME/.local/.npm-global/bin
+addToPathFront $HOME/.local/scripts
+addToPathFront $HOME/.local/bin
+addToPathFront $HOME/.local/n/bin/
+addToPathFront $HOME/.local/go/bin
+addToPathFront $HOME/go/bin
+addToPathFront $HOME/.deno/bin
+addToPathFront $HOME/.bun/bin
+addToPathFront $HOME/.cargo/bin
+
+# Where should I put you?
+bindkey -s ^f "tmux-sessionizer\n"
+
+# Aliases
+alias myip="curl http://ipecho.net/plain && echo"
+alias vim="nvim"
+alias v="nvim"
+alias \$=""
+alias ls="eza -la --icons --no-permissions --no-user --git"
+alias cd="z"
+alias gspush="git stash push"
+alias gspop="git stash pop"
+alias gbpurge='git branch --merged | grep -Ev "(\*|master|main|develop|staging)" | xargs -n 1 git branch -d'
+alias clang="clang-18"
+
+# catr <start> <end> <file>
+#   start at line <start>, print <end> - <start> + 1 lines from <file>
+catr() {
+    tail -n "+$1" $3 | head -n "$(($2 - $1 + 1))"
+}
+
+
+# Automatically stages all changes, generates a random commit message,
+# and pushes the changes to the remote repository.
+commit_plz() {
+    git pull
+    git add .
+    git commit -m "$(curl -sk https://whatthecommit.com/index.txt)"
+    git push
+}
+
+
+
+# Prints a public URL for your local web server.
+#
+# Usage:
+#   tunnel <port>
+#
+# Example:
+#   tunnel 3000
+tunnel() {
+    if [ "$1" -eq "0" ] 
+    then
+        echo "Please provide a port"
+    else
+        cloudflared tunnel --url http://localhost:$1 2> >(grep -oh "https://\(.*\)trycloudflare.com")
+    fi
+}
+
+ex() {
+    if [ -f $1 ] ; then
+        case $1 in
+            *.tar.bz2)   tar xjf $1   ;;
+            *.tar.gz)    tar xzf $1   ;;
+            *.tar.xz)    tar xJf $1   ;;
+            *.bz2)       bunzip2 $1   ;;
+            *.rar)       unrar x $1     ;;
+            *.gz)        gunzip $1    ;;
+            *.tar)       tar xf $1    ;;
+            *.tbz2)      tar xjf $1   ;;
+            *.tgz)       tar xzf $1   ;;
+            *.zip)       unzip $1     ;;
+            *.Z)         uncompress $1;;
+            *.7z)        7z x $1      ;;
+            *)           echo "'$1' cannot be extracted via ex()" ;;
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
