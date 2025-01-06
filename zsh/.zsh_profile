@@ -61,13 +61,8 @@ catr() {
 }
 
 
-# Automatically stages all changes, generates a random commit message,
-# and pushes the changes to the remote repository.
 commit_plz() {
-    git pull
-    git add .
     git commit -m "$(curl -sk https://whatthecommit.com/index.txt)"
-    git push
 }
 
 
