@@ -47,10 +47,12 @@ alias myip="curl http://ipecho.net/plain && echo"
 alias vim="nvim"
 alias v="nvim"
 alias \$=""
-alias ls="eza -la --icons --no-permissions --no-user --git"
+alias ls="eza -l --icons --no-permissions --no-user --git"
+alias la="eza -la --icons --no-permissions --no-user --git"
 alias cd="z"
 alias gspush="git stash push"
 alias gspop="git stash pop"
+alias gco="git checkout"
 alias gbpurge='git branch --merged | grep -Ev "(\*|master|main|develop|staging)" | xargs -n 1 git branch -d'
 alias clang="clang-18"
 
