@@ -38,6 +38,7 @@ addToPathFront $HOME/go/bin
 addToPathFront $HOME/.deno/bin
 addToPathFront $HOME/.bun/bin
 addToPathFront $HOME/.cargo/bin
+addToPathFront $HOME/.dotnet/tools
 
 # Where should I put you?
 bindkey -s ^f "tmux-sessionizer\n"
