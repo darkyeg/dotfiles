@@ -13,11 +13,11 @@ if [ -d "$PERSONAL" ]; then
         fi
     done
 fi
-source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
+source /home/darky/.oh-my-zsh/lib/key-bindings.zsh
+source /home/darky/.oh-my-zsh/lib/completion.zsh
 
-export CC="clang-18"
-export CXX="clang++-18"
+export CC="clang-19"
+export CXX="clang++-19"
 export GIT_EDITOR=$VIM
 export DENO_INSTALL="$HOME/.deno"
 export DOTFILES=$HOME/dotfiles
@@ -39,6 +39,10 @@ addToPathFront $HOME/.deno/bin
 addToPathFront $HOME/.bun/bin
 addToPathFront $HOME/.cargo/bin
 addToPathFront $HOME/.dotnet/tools
+addToPathFront $HOME/.pub-cache/bin
+addToPathFront $HOME/.local/share/fnm
+
+
 
 # Where should I put you?
 bindkey -s ^f "tmux-sessionizer\n"
@@ -55,7 +59,9 @@ alias gspush="git stash push"
 alias gspop="git stash pop"
 alias gco="git checkout"
 alias gbpurge='git branch --merged | grep -Ev "(\*|master|main|develop|staging)" | xargs -n 1 git branch -d'
-alias clang="clang-18"
+alias clang="clang-19"
+
+eval "$(fnm env --use-on-cd --shell zsh)"
 
 # catr <start> <end> <file>
 #   start at line <start>, print <end> - <start> + 1 lines from <file>

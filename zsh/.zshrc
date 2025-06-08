@@ -117,8 +117,13 @@ command -v zoxide &> /dev/null && eval "$(zoxide init zsh)"
 # bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
-
-
 export NVM_DIR="$HOME/.config/nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+export PATH=$HOME/.local/bin:$PATH
+
+# Added by ProtonUp-Qt on 16-04-2025 14:31:18
+if [ -d "/home/darky/stl/prefix" ]; then export PATH="$PATH:/home/darky/stl/prefix"; fi
+
+
+

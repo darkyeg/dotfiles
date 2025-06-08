@@ -1,0 +1,28 @@
+# pywal = true
+backend = "resized"
+
+# `dark`, `dark16`, `darkcomp`, `darkcomp16`, `ansidark`, `harddark`, `harddark16`, `harddarkcomp`, `harddarkcomp16`, `light`, `light16`, `lightcomp`, `lightcomp16`, `softdark`, `softdark16`, `softdarkcomp`, `softdarkcomp16`, `softlight`, `softlight16`, `softlightcomp`, `softlightcomp16`
+palette = "ansidark"
+
+# ansidark, light, light16, lightcomp,
+
+
+[templates.vencord]
+template = 'discord-wallust.css'
+target = '~/.config/vesktop/themes/discord-wallust.css'
+
+[templates.ghostty]
+template = 'ghostty-wallust'
+target = '~/.config/ghostty/themes/ghostty-wallust'
+
+[templates.pywal]
+template = 'pywal-colors'
+target = '~/.cache/wal/colors'
+
+[templates.waybar]
+template = 'colors-waybar.css'
+target = '~/.config/waybar/colors-wallust.css'
+
+[templates.hypr]
+template = 'colors-hypr.conf'
+target = '~/.config/hypr/themes/wallust.conf'
