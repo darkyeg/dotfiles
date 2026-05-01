@@ -1,2 +1,4 @@
 bin/.local/bin
 personal
+.claude
+home/local.nix
