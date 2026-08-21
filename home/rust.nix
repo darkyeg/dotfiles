@@ -1,15 +1,17 @@
-{ pkgs, inputs, ... }:
+{ pkgs, lib, inputs, includeRustDocs ? true, ... }:
 let
   fenix = inputs.fenix.packages.${pkgs.system};
-  toolchain = fenix.stable.withComponents [
-    "cargo"
-    "rustc"
-    "clippy"
-    "rustfmt"
-    "rust-src"
-    "rust-std"
-    "rust-docs"
-  ];
+  toolchain = fenix.stable.withComponents (
+    [
+      "cargo"
+      "rustc"
+      "clippy"
+      "rustfmt"
+      "rust-src"
+      "rust-std"
+    ]
+    ++ lib.optionals includeRustDocs [ "rust-docs" ]
+  );
 in
 {
   home.packages = [

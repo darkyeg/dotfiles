@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, username, ... }:
 {
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   nix.settings.auto-optimise-store = true;
@@ -26,10 +26,10 @@
 
   console.keyMap = "us";
 
-  users.users.yoku = {
+  users.users.${username} = {
     isNormalUser = true;
     description = "Youssef Khalil";
-    extraGroups = [ "wheel" "networkmanager" "storage" "video" "audio" ];
+    extraGroups = [ "wheel" ];
     shell = pkgs.zsh;
   };
 

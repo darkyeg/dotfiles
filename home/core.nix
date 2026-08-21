@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   gtk.gtk3.extraConfig.gtk-enable-primary-paste = false;
   gtk.gtk4.extraConfig.gtk-enable-primary-paste = false;
@@ -22,7 +22,7 @@
 
   programs.nh = {
     enable = true;
-    flake = "/home/yoku/dotfiles";
+    flake = "${config.home.homeDirectory}/dotfiles";
   };
 
   programs.nix-index = {

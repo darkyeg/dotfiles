@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  stateDir = "/home/yoku/.config/dotfiles";
+  stateDir = "${config.home.homeDirectory}/.config/dotfiles";
   readState = name: default:
     let f = "${stateDir}/${name}"; in
     if builtins.pathExists f

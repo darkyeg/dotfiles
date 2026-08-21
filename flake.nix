@@ -1,11 +1,16 @@
 {
-  description = "yoku's NixOS + home-manager flake";
+  description = "darky's NixOS + home-manager flake";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     home-manager = {
       url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -37,9 +42,10 @@
     };
   };
 
-  outputs = { self, nixpkgs, home-manager, plasma-manager, stylix, spicetify-nix, walker, fenix, ... }@inputs:
+  outputs = { self, nixpkgs, home-manager, nixos-wsl, plasma-manager, stylix, spicetify-nix, walker, fenix, ... }@inputs:
     let
       system = "x86_64-linux";
+      username = "darky";
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true;
@@ -47,19 +53,42 @@
     in {
       nixosConfigurations.desktop = nixpkgs.lib.nixosSystem {
         inherit system;
-        specialArgs = { inherit inputs; };
+        specialArgs = { inherit inputs username; };
         modules = [ ./hosts/desktop ];
       };
 
-      homeConfigurations."yoku@desktop" = home-manager.lib.homeManagerConfiguration {
+      nixosConfigurations.wsl = nixpkgs.lib.nixosSystem {
+        inherit system;
+        specialArgs = { inherit inputs username; };
+        modules = [
+          nixos-wsl.nixosModules.default
+          home-manager.nixosModules.home-manager
+          ./hosts/wsl
+          {
+            home-manager.useGlobalPkgs = true;
+            home-manager.useUserPackages = true;
+            home-manager.backupFileExtension = "hm-backup";
+            home-manager.extraSpecialArgs = {
+              inherit inputs username;
+              includeRustDocs = false;
+            };
+            home-manager.users.${username} = import ./home/wsl.nix;
+          }
+        ];
+      };
+
+      homeConfigurations."${username}@desktop" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
-        extraSpecialArgs = { inherit inputs; };
+        extraSpecialArgs = {
+          inherit inputs username;
+          includeRustDocs = true;
+        };
         modules = [
           plasma-manager.homeModules.plasma-manager
           stylix.homeModules.stylix
           spicetify-nix.homeManagerModules.default
           walker.homeManagerModules.default
-          ./home/yoku.nix
+          ./home/desktop.nix
         ];
       };
     };

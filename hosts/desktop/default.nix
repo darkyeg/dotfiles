@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, username, ... }:
 {
   imports = [
     ./hardware.nix
@@ -26,6 +26,8 @@
   ];
 
   networking.hostName = "desktop";
+
+  users.users.${username}.extraGroups = [ "networkmanager" "storage" "video" "audio" ];
 
   services.ratbagd.enable = true;
   environment.systemPackages = [ pkgs.piper ];

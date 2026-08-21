@@ -1,4 +1,4 @@
-{ ... }:
+{ username, ... }:
 {
   virtualisation.docker = {
     enable = true;
@@ -9,5 +9,5 @@
     };
   };
 
-  users.users.yoku.extraGroups = [ "docker" ];
+  users.users.${username}.extraGroups = [ "docker" ];
 }
