@@ -7,6 +7,7 @@
     fnm
     bun
     deno
+    uv
     python3
     gcc
     gnumake

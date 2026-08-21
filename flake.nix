@@ -91,5 +91,29 @@
           ./home/desktop.nix
         ];
       };
+
+      devShells.${system}.cuda-python =
+        let
+          cuda = pkgs.cudaPackages_12_6;
+        in (pkgs.mkShell.override {
+          stdenv = cuda.backendStdenv;
+        }) {
+          packages = [
+            pkgs.uv
+            pkgs.pkg-config
+            pkgs.libffi
+            cuda.cudatoolkit
+          ];
+
+          CUDA_HOME = "${cuda.cudatoolkit}";
+          CUDA_PATH = "${cuda.cudatoolkit}";
+          UV_PROJECT_ENVIRONMENT = ".venv";
+          UV_PYTHON = "3.10";
+
+          shellHook = ''
+            export LD_LIBRARY_PATH="/run/opengl-driver/lib:${cuda.cudatoolkit}/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            export PATH="$PWD/.venv/bin:$PATH"
+          '';
+        };
     };
 }
