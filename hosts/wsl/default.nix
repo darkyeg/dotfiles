@@ -4,6 +4,10 @@
 
   networking.hostName = "wsl";
 
+  # The Codex Windows app currently expects this conventional FHS path when
+  # starting its agent in WSL. NixOS-WSL already provides /bin/bash.
+  systemd.tmpfiles.rules = [ "L+ /usr/bin/bash - - - - /bin/bash" ];
+
   wsl = {
     enable = true;
     defaultUser = username;
