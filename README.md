@@ -1,8 +1,8 @@
 # NixOS dotfiles
 
 A configuration is a machine, a user, and a home profile. User identity lives in
-one file; profiles select shared modules; each app owns its settings. The current
-machine uses Plasma. Other desktops can be added through their own modules.
+one file; profiles select shared modules; each app owns its settings. The included
+profiles use Plasma. Other desktops can be added through their own modules.
 
 ## Start on a fresh NixOS installation
 
@@ -26,8 +26,8 @@ bash bootstrap.sh --no-tools
 bash bootstrap.sh --home-only
 ```
 
-The full system configuration under `hosts/desktop` describes the original
-machine. Configure your own hardware before using `os --full` on another PC.
+The included [desktop host](hosts/desktop/README.md) has machine-specific hardware
+and storage settings. Configure your own host before using `os --full` on another PC.
 
 ## Find the right file
 

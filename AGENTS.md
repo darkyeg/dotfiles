@@ -5,6 +5,8 @@
 - For user, profile, host, or fork changes, read [docs/configuration.md](docs/configuration.md).
 - For bootstrap, updates, activation, or runtime state, read
   [docs/maintenance.md](docs/maintenance.md).
+- Keep shared guides generic, using fictional identities in examples. Put machine
+  assumptions and local troubleshooting in the relevant host's README.
 - Use [README.md](README.md) to find the owning file. Inspect its imports and an
   existing module of the same kind before changing it.
 - Inspect the working tree first; preserve unrelated changes. A refactor keeps
@@ -59,7 +61,7 @@
 - Keep `flake.lock` unchanged for structural work. For requested version updates,
   refresh only the intended inputs; review the lock diff and package changes.
 - Check platform scope before extending setup. The current bootstrap targets
-  installed NixOS desktops; a future laptop gets its own hardware and host imports.
+  installed NixOS desktops; each new host gets its own hardware and host imports.
   Architecture that permits another platform does not establish working support.
 - Nix owns regular apps and CLI runtimes/launchers. `scripts/dev-setup` owns the
   supported native developer-tool installers and updates. Preserve their existing

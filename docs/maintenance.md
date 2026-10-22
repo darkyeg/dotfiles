@@ -80,8 +80,8 @@ Codex uses npm under the user's local data directory with a Nix-provided runtime
 Nix owns the launchers and runtime; these upstream versions remain outside the
 system rebuild. Sign in to AI providers through their own authentication flows.
 
-T3 desktop AppImages use their in-app updater. `update-all` covers the Nix
-configuration and the supported developer tools, not arbitrary external apps.
+`update-all` covers the Nix configuration and the supported developer tools.
+Independently installed apps use their own update mechanisms.
 
 ## Where state lives
 
@@ -95,10 +95,9 @@ configuration and the supported developer tools, not arbitrary external apps.
 | Codex npm installation | `~/.local/share/ai-cli/` |
 | Node versions | fnm's own data directory |
 | Private shell environment | `~/.config/personal/` |
-| VM definitions, UEFI variables, vTPM | libvirt's system state under `/var/lib/libvirt/` |
 
-Each account has its own home state. The refactor does not migrate or delete these
-directories. VM state is separate from module organization.
+Each account has its own home state. Keep mutable application data and credentials
+outside the repository, and back them up separately from configuration files.
 
 `DOTFILES` overrides the remembered checkout. Bootstrap supplies its checkout path
 during evaluation and remembers it after successful activation. The nh default and
@@ -112,13 +111,14 @@ Before applying a change:
 
 ```sh
 nix flake check --impure --no-build --no-write-lock-file
-nh home build "$DOTFILES" --configuration full --impure
+nh home build "$DOTFILES" --configuration "${USER}@$(uname -n)" --impure
 nh os build "$DOTFILES"
 ```
 
-Replace `full` with your named home target. A build creates configuration artifacts
-without activating them. Keep `flake.lock` unchanged for a structural refactor;
-update it deliberately when you want newer software.
+Use the registered home and system targets for your account and host. A build
+creates configuration artifacts without activating them. Keep `flake.lock`
+unchanged for a structural refactor; update it deliberately when you want newer
+software.
 
 Home Manager retains generations; list them with `home-manager generations` and
 activate a previous generation's `activate` script if needed. NixOS keeps boot
@@ -131,18 +131,3 @@ check just to complete an update.
 
 Keep `home.stateVersion` and `system.stateVersion` at the values used by the
 existing installation. They control compatibility behavior, not package freshness.
-
-## Local compatibility fixes
-
-| Behavior | Owner and reason |
-| --- | --- |
-| Walker shortcut without a stuck launch indicator | `modules/home/desktop/plasma.nix` keeps Plasma's cached entry linked to its managed launcher |
-| Ghostty backend | `modules/home/apps/ghostty.nix` selects epoll after the local io_uring wait-accounting issue |
-| Writable GitHub CLI login config | `modules/home/apps/git.nix` leaves gh's mutable config to gh |
-| Writable editor and chat preferences | Their app modules retain writable settings and seed initial values |
-| Gear Lever GTK wrapper | `packages/gearlever.nix` repairs only the affected upstream wrapper shape; the AppImage module selects it |
-| Native tool versions without a system rebuild | `modules/home/development/ai.nix` packages launchers; `scripts/dev-setup` owns installation and updates |
-
-Keep a workaround with the module that owns its behavior, state why it exists,
-and check its upstream condition before removing it. Runtime troubleshooting such
-as a kernel clock warning is separate from a source-tree refactor.

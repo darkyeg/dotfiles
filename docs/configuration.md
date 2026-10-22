@@ -3,6 +3,8 @@
 A named configuration combines a machine, a user, and a home profile. The files
 under `configurations/` declare those combinations using ordinary Nix outputs.
 Profiles select shared modules; users own identity and personal settings.
+Examples use the fictional account `alex`; substitute your selected user module
+and registered host name.
 
 `flake.nix` declares external dependencies. `configurations.nix` loads top-level
 `.nix` files from `configurations/nixos/` and `configurations/home/`, then combines
@@ -11,13 +13,14 @@ Adding a target file exposes a build target; it does not activate it.
 
 ## User identity
 
-`users/yoku/identity.nix` is the source of the primary account's identity:
+Each user's `users/<user>/identity.nix` owns their account and Git identity.
+For example, `users/alex/identity.nix`:
 
 ```nix
 {
-  username = "yoku";
-  name = "Youssef Khalil";
-  email = "me@darky.dev";
+  username = "alex";
+  name = "Alex Example";
+  email = "alex@example.org";
 }
 ```
 
@@ -87,7 +90,7 @@ Create `configurations/home/work.nix`; the loader finds it automatically:
 let
   home = mkHome [
     ../../profiles/home/work.nix
-    ../../users/yoku/home.nix
+    ../../users/alex/home.nix
   ];
 in
 {
@@ -103,9 +106,8 @@ or erase application data.
 
 ## Add another user
 
-For `yoku` and `darky` on the same machine, keep the existing user and add the
-second one. Create `users/darky/identity.nix` with that account's three identity
-fields. Create `users/darky/home.nix`:
+Create `users/alex/identity.nix` with the account's three identity fields, then
+create `users/alex/home.nix`:
 
 ```nix
 { config, ... }:
@@ -122,7 +124,7 @@ in
 }
 ```
 
-Create `users/darky/nixos.nix` if this machine should have the Linux account:
+Create `users/alex/nixos.nix` if this machine should have the Linux account:
 
 ```nix
 { pkgs, ... }:
@@ -139,20 +141,20 @@ in
 }
 ```
 
-Add `../../users/darky/nixos.nix` to `hosts/desktop/default.nix` alongside the
-existing user import. Add `wheel` only for an administrator; select Docker and
+Add `../../users/alex/nixos.nix` to the chosen host's imports alongside its
+existing user modules. Add `wheel` only for an administrator; select Docker and
 libvirt access per account. Set a new account's password locally or configure its
 SSH access; keep credentials outside the repository. See the
 [NixOS user-management manual](https://nixos.org/manual/nixos/stable/#sec-user-management).
 
-Create `configurations/home/darky.nix`:
+Create `configurations/home/alex.nix`:
 
 ```nix
 { mkHome, ... }:
 let
   home = mkHome [
     ../../profiles/home/essential.nix
-    ../../users/darky/home.nix
+    ../../users/alex/home.nix
   ];
 in
 {
@@ -160,9 +162,9 @@ in
 }
 ```
 
-Choose `full.nix` instead if both users should receive the same apps. For a
-different selection, create a profile as described above; shared app modules stay
-in one place. Nothing changes in `flake.nix` or the shared loader.
+Select whichever shared profile the account needs. Accounts can share a profile
+or use different ones; shared app modules stay in one place. Nothing changes in
+`flake.nix` or the shared loader.
 
 Build both the system and new home target before applying them. An administrator
 applies the system configuration to create the account. Log in as the new user,
@@ -181,9 +183,9 @@ home. Each user runs their own home commands.
 
 ## Change an existing username
 
-On a fresh installation or fork, set `username = "darky";` in the selected identity
+On a fresh installation or fork, set the desired username in the selected identity
 record before creating the account. The NixOS and home modules read that value,
-and the named home outputs derive from it. The directory can remain `users/yoku/`
+and the named home outputs derive from it. The directory can remain `users/alex/`
 or be renamed with its imports updated; the directory name does not select the
 account.
 
@@ -194,10 +196,9 @@ existing UID, groups, and file ownership; decide whether to retain or move the
 home directory; and carry over keys, authentication, and application state.
 Update paths and select the new named home target after the account migration.
 
-Check host storage ownership too. This desktop's Windows-volume mounts explicitly
-use UID `1000` in `hosts/desktop/storage.nix`; adding another user does not grant
-them the same ownership. A username rename should retain the original numeric
-owner unless a separate storage change is intended.
+Check numeric ownership in the host's mount options too. Adding another user does
+not grant them ownership of existing volumes. A username rename should retain the
+original numeric owner unless a separate storage change is intended.
 
 ## Fork this repository
 
@@ -243,7 +244,7 @@ That host should set `networking.hostName = "laptop"`. Create
 let
   home = mkHome [
     ../../profiles/home/essential.nix
-    ../../users/yoku/home.nix
+    ../../users/alex/home.nix
   ];
 in
 {
@@ -252,12 +253,12 @@ in
 ```
 
 Use that machine's installer-generated hardware configuration. Review storage,
-GPU drivers, boot settings, locale, and user imports. The original desktop's
-`storage.nix` contains its drive IDs and ownership settings.
+GPU drivers, boot settings, locale, and user imports. Keep each host's drive IDs
+and mount ownership with that host. The included
+[desktop host notes](../hosts/desktop/README.md) describe its local assumptions.
 
-No laptop or WSL target is registered now. Bootstrap currently supports installed
-NixOS desktops. Ubuntu needs its own home profile and setup path; running this
-bootstrap there exits before changing the system.
+Bootstrap supports installed graphical NixOS systems. Other operating systems
+need an explicit setup path and compatible profiles; bootstrap rejects them.
 
 ## Choose desktops per user
 
@@ -275,9 +276,9 @@ fit the existing structure:
 | Desired setup | Host imports | Home selection |
 | --- | --- | --- |
 | Both users use Plasma | Plasma session and both account modules | Each user's home plus the same or different app profiles |
-| `yoku` uses Plasma, `darky` uses Hyprland | Both sessions and both account modules | Plasma settings for `yoku`; Hyprland settings for `darky` |
-| `yoku` chooses either session at login | Both sessions and the existing account module | One home configuration importing compatible settings for both desktops |
-| `yoku` switches between alternative setups | The sessions those setups require | Separate named home targets, selected with `hm --configuration` |
+| Different desktops per user | Both sessions and both account modules | Each user's home selects its desktop settings |
+| One user chooses either session at login | Both sessions and that account module | One home configuration importing compatible settings for both desktops |
+| One user switches between alternative setups | The sessions those setups require | Separate named home targets, selected with `hm --configuration` |
 
 Login-session choice does not switch Home Manager targets. Alternative targets
 replace the user's active managed configuration when applied. To keep both
@@ -345,3 +346,7 @@ updaters, `shell/` for shell behavior, `desktop/` for launcher integration, and
 Editable Neovim files live under `config/nvim`; shell functions and tmux settings
 live under `config/zsh` and `config/tmux`. Neovim's link uses the selected repository
 path rather than a username embedded in the module.
+
+The Ghostty module sets `TERMINAL` and the `xdg-terminal-exec` preference. The
+Plasma module sets KDE's default terminal and its `Ctrl+Alt+T` shortcut. Change
+the owning module when selecting another terminal.
