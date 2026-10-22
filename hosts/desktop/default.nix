@@ -23,6 +23,7 @@
     ../../modules/desktop/printing.nix
     ../../modules/desktop/fonts.nix
     ../../modules/desktop/sunshine.nix
+    ../../modules/desktop/virtual-machines.nix
   ];
 
   networking.hostName = "desktop";
