@@ -1,0 +1,23 @@
+{
+  imports = [
+    ./base.nix
+    ../../modules/home/theme
+    ../../modules/home/theme/stylix.nix
+    ../../modules/home/apps/neovim.nix
+    ../../modules/home/apps/zed.nix
+    ../../modules/home/apps/vscode.nix
+    ../../modules/home/apps/vesktop.nix
+    ../../modules/home/apps/spotify.nix
+    ../../modules/home/apps/minecraft.nix
+    ../../modules/home/development/go.nix
+    ../../modules/home/development/rust.nix
+    ../../modules/home/development/dotnet.nix
+    ../../modules/home/development/playwright.nix
+    ../../modules/home/development/tools.nix
+    ../../modules/home/desktop/plasma.nix
+    ../../modules/home/desktop/walker.nix
+    ../../modules/home/packages/cli.nix
+    ../../modules/home/packages/gui.nix
+    ../../modules/home/packages/pdf.nix
+  ];
+}

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: dev-setup [node|bun|claude|codex|all ...]"
+  echo "Installs only missing tools; defaults to all."
+  echo "dev-update [tools ...] updates installed tools only."
+}
+
+validate_targets() {
+  local tool
+  for tool in "$@"; do
+    case "$tool" in
+      node|bun|claude|codex) ;;
+      *) echo "Unknown tool: $tool" >&2; return 2 ;;
+    esac
+  done
+}
+
+tool_installed() {
+  case "$1" in
+    node) fnm exec --using default node --version ;;
+    bun) "$HOME/.bun/bin/bun" --version ;;
+    claude) "$HOME/.local/bin/claude" --version ;;
+    codex) node "$HOME/.local/share/ai-cli/lib/node_modules/@openai/codex/bin/codex.js" --version ;;
+  esac
+}
+
+cleanup_installer() {
+  if [[ -n "$installer" ]]; then
+    rm -f "$installer" || return 1
+    installer=""
+  fi
+}
+
+run_installer() {
+  local tool="$1"
+  local url="$2"
+  local failed=false
+
+  installer=$(mktemp) || return 1
+  if curl -fsSL --retry 2 "$url" -o "$installer"; then
+    case "$tool" in
+      bun)
+        # Home Manager owns the shell files; let it supply the launchers.
+        env SHELL=none BUN_INSTALL="$HOME/.bun" bash "$installer" || failed=true
+        ;;
+      claude) bash "$installer" latest || failed=true ;;
+    esac
+  else
+    failed=true
+  fi
+  cleanup_installer || failed=true
+  if $failed; then return 1; fi
+}
+
+setup_node() {
+  fnm install --lts || return 1
+  fnm default lts-latest
+}
+
+setup_bun() {
+  if "$1"; then
+    "$HOME/.bun/bin/bun" upgrade
+  else
+    run_installer bun https://bun.com/install
+  fi
+}
+
+setup_claude() {
+  if "$1"; then
+    "$HOME/.local/bin/claude" update
+  else
+    run_installer claude https://claude.ai/install.sh
+  fi
+}
+
+setup_codex() {
+  npm install --global --prefix "$HOME/.local/share/ai-cli" @openai/codex@latest
+}
+
+setup_tool() {
+  local tool="$1"
+  local installed=false
+
+  if tool_installed "$tool" >/dev/null 2>&1; then installed=true; fi
+  if ! $update && $installed; then
+    echo "$tool: already installed; skipped."
+    return 0
+  fi
+  if $update && ! $installed; then
+    echo "$tool: not installed; skipped. Install with: dev-setup $tool"
+    return 0
+  fi
+  case "$tool" in
+    node) setup_node ;;
+    bun) setup_bun "$installed" ;;
+    claude) setup_claude "$installed" ;;
+    codex) setup_codex ;;
+  esac
+}
+
+update=false
+if [[ "${1:-}" == --update ]]; then
+  update=true
+  shift
+fi
+if [[ "${1:-}" == --help || "${1:-}" == -h ]]; then
+  usage
+  exit 0
+fi
+targets=("$@")
+if (( ${#targets[@]} == 0 )) || [[ "${targets[*]}" == all ]]; then
+  targets=(node bun claude codex)
+fi
+validate_targets "${targets[@]}" || exit 2
+
+installer=""
+failed=false
+trap cleanup_installer EXIT
+for tool in "${targets[@]}"; do
+  # A conditional disables errexit inside functions; each operation returns its failure.
+  if ! setup_tool "$tool"; then failed=true; fi
+done
+if $failed; then
+  echo "Some tools failed; the other selected tools were still processed. Retry the failed tool by name." >&2
+  exit 1
+fi

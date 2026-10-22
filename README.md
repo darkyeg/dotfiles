@@ -1,76 +1,72 @@
-# Dotfiles
+# NixOS dotfiles
 
-Start with the graphical NixOS installer and a working desktop/network connection.
-Clone this repository, then run the bootstrap. `nix-shell` supplies Git even on
-a fresh install where Git is missing:
+A configuration is a machine, a user, and a home profile. User identity lives in
+one file; profiles select shared modules; each app owns its settings. The current
+machine uses Plasma. Other desktops can be added through their own modules.
+
+## Start on a fresh NixOS installation
+
+Use the graphical installer first, with a working desktop and network connection.
+Then clone the repository and run the resumable bootstrap:
 
 ```sh
 nix-shell -p git --run 'git clone https://github.com/darkyeg/dotfiles.git "$HOME/dotfiles"'
-bash ~/dotfiles/bootstrap.sh
+bash "$HOME/dotfiles/bootstrap.sh"
 ```
 
-The default setup keeps `/etc/nixos/configuration.nix` and its hardware settings,
-adds Brave, Ghostty, Git, and support for native binaries, then applies a small
-Home Manager profile. Brave is installed before the home configuration and dev
-tools. The first system rebuild reuses the installer's NixOS channel when one
-exists, avoiding an unrelated switch to the repository's newer system packages.
-Regular desktop apps stay managed by Nix.
-
-The essentials profile includes the shell, terminal, browser, Walker launcher
-(Alt + Space), basic Neovim, fnm, and the dev-tool commands. It leaves language
-toolchains, extra editors, Playwright browsers, media apps, and games for later.
-Node versions, Bun, Claude, and Codex use their own installers for quick updates.
-AI authentication still happens through each provider's sign-in flow.
-
-Preview or customize the setup:
+The default keeps the installer's hardware configuration, installs Brave and
+Ghostty, applies the essentials home profile, and installs missing developer
+tools. Completed downloads are reused when you rerun it. Regular apps stay managed
+by Nix; Node, Bun, Claude, and Codex retain their own fast update paths.
 
 ```sh
 bash bootstrap.sh --dry-run
 bash bootstrap.sh --tools bun,claude,codex
 bash bootstrap.sh --no-tools
-bash bootstrap.sh --home-only       # Existing system already configured
-bash bootstrap.sh --full            # Full Home Manager apps; longer download
+bash bootstrap.sh --home-only
 ```
 
-Rerun the same command after a failed download. Nix reuses completed store paths
-and `dev-setup` skips installed tools. Logs append to
-`~/.local/state/dotfiles/bootstrap.log`. The script never updates the lock file
-automatically. Initial downloads still depend on connection speed and cache
-availability.
+The full system configuration under `hosts/desktop` describes the original
+machine. Configure your own hardware before using `os --full` on another PC.
 
-Conflicting unmanaged home configuration files are backed up beside the original
-with a unique `.before-dotfiles-...` extension before Home Manager takes over.
+## Find the right file
+
+| Change | Location |
+| --- | --- |
+| Username, display name, Git email | `users/<user>/identity.nix` |
+| User preferences and Git signing | `users/<user>/home.nix` |
+| User account and permissions | `users/<user>/nixos.nix` |
+| Apps included in a profile | `profiles/home/` |
+| An app's settings | `modules/home/apps/` |
+| Shell, languages, desktop, or theme | Their directories under `modules/home/` |
+| Host services, hardware, drives, locale | `hosts/<host>/` |
+| Reusable NixOS settings | `modules/nixos/` |
+| Custom package recipes and package patches | `packages/` |
+| Update and theme command implementations | `scripts/` |
+| Editor and shell configuration files | `config/` |
+| External dependency declarations and pinned versions | `flake.nix` and `flake.lock` |
+| Named machine and home configurations | `configurations/nixos/` and `configurations/home/` |
+| Shared target loading and package set | `configurations.nix` |
 
 ## Everyday commands
 
-These are installed commands that work from any directory and shell:
+These commands work from any directory:
 
 | Command | Action |
 | --- | --- |
-| `update-all` | Refresh pinned versions, apply system and home, update installed dev tools |
-| `hm` | Apply the selected Home Manager profile |
-| `hmu` | Update flake inputs and apply that home profile |
-| `os` | Apply the selected system profile |
-| `osu` | Update flake inputs and apply that system profile |
-| `hm --full` | Switch to the full home setup |
-| `hm --essential` | Switch to the essentials home setup |
-| `ai-update` | Update installed Claude and Codex |
+| `hm` / `os` | Apply the saved home / system selection |
+| `hmu` / `osu` | Update inputs and apply that selection |
+| `hm --essential` / `hm --full` | Select an existing compatibility profile |
+| `hm --configuration user@host` | Select and remember a named home configuration |
+| `update-all` | Update Nix inputs, apply system and home, update installed dev tools |
+| `update-all --dry` | Preview those stages |
+| `dev-setup bun` | Install Bun only if missing |
 | `dev-update` | Update installed Node, Bun, Claude, and Codex |
-| `dev-update bun` | Update only Bun |
-| `dev-setup claude codex` | Install just the missing selected tools |
+| `dev-update bun` / `ai-update` | Update Bun only / installed AI CLIs |
 
-Use `update-all --dry` to preview its stages. It refreshes the lock file once,
-then applies the selected profiles; an individual failure does not stop unrelated
-updates. For the bootstrap system profile it also updates the installer's NixOS
-channel. T3 desktop AppImages keep their own in-app updater.
+The `full` alias belongs to the primary user. Additional users and profiles use
+named configurations. Home and system selections are remembered separately.
 
-`dev-setup` with no arguments installs missing tools from all four supported
-tools. `dev-update` skips tools you have not installed. Updating Node selects
-the latest LTS as fnm's default and retains older project versions.
-
-Home and system profiles are remembered separately in `~/.config/dotfiles`.
-After bootstrap, `os` continues using the installer-created system configuration
-plus the small bootstrap module. `os --full` selects the existing machine-specific
-system flake; review its hardware/drive configuration before using it on another
-machine. The full home profile retains the identity in `home/yoku.nix`; essentials
-uses the user running the script. Set `DOTFILES` to override the saved checkout.
+- [Compose profiles, add users, fork, and add a machine](docs/configuration.md)
+- [Install, update, verify, recover, and locate runtime state](docs/maintenance.md)
+- [Rules for AI contributors](AGENTS.md)

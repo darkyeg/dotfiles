@@ -1,0 +1,153 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "Usage: dotfiles home|home-update|system|system-update [--essential|--full] [nh options]"
+  echo "       dotfiles home [--configuration user@host] [nh options]"
+  echo "       dotfiles update-all [--dry]"
+}
+
+repository_path() {
+  local state="$1"
+  local repo="${DOTFILES:-}"
+  if [[ -z "$repo" && -r "$state/repository" ]]; then
+    IFS= read -r repo < "$state/repository"
+  fi
+  printf '%s\n' "${repo:-$HOME/dotfiles}"
+}
+
+require_repository() {
+  local repo="$1"
+  if [[ ! -f "$repo/flake.nix" ]]; then
+    echo "Dotfiles not found at $repo. Set DOTFILES to your checkout." >&2
+    return 1
+  fi
+}
+
+validate_profile() {
+  local kind="$1" profile="$2"
+  case "$profile" in essential|full) return 0 ;; esac
+  if [[ "$kind" != home ]]; then
+    echo "Invalid saved $kind profile: $profile" >&2
+    return 2
+  fi
+  if [[ ! "$profile" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]*@[a-zA-Z0-9_][a-zA-Z0-9_.-]*$ ]]; then
+    echo "Invalid saved $kind profile: $profile" >&2
+    return 2
+  fi
+}
+
+apply_system() {
+  local repo="$1" profile="$2" action="$3" dry="$4"
+  shift 4
+  if [[ "$profile" == essential ]]; then
+    if [[ "$action" == system-update || "${DOTFILES_REFRESH_SYSTEM:-}" == 1 ]] &&
+        [[ -d /nix/var/nix/profiles/per-user/root/channels/nixos/nixos ]]; then
+      if ! $dry; then sudo nix-channel --update nixos || return; fi
+    fi
+    nh os switch "$repo" --hostname bootstrap --impure "$@"
+  else
+    nh os switch "$repo" --impure "$@"
+  fi
+}
+
+switch_configuration() {
+  local action="$1" repo="$2" state="$3"
+  shift 3
+  local kind=system
+  if [[ "$action" == home* ]]; then kind=home; fi
+
+  local profile=full
+  if [[ -r "$state/$kind-profile" ]]; then
+    IFS= read -r profile < "$state/$kind-profile"
+  fi
+  local dry=false
+  local forward=()
+  while (( $# )); do
+    case "$1" in
+      --essential) profile=essential ;;
+      --full) profile=full ;;
+      --configuration|-c|--configuration=*)
+        if [[ "$kind" != home ]]; then
+          echo "--configuration selects a home target; use --hostname for NixOS." >&2
+          return 2
+        fi
+        if [[ "$1" == --configuration=* ]]; then
+          profile="${1#*=}"
+        else
+          if (( $# < 2 )); then
+            echo "--configuration needs a home configuration name." >&2
+            return 2
+          fi
+          profile="$2"
+          shift
+        fi
+        ;;
+      --dry|-n) dry=true; forward+=("$1") ;;
+      *) forward+=("$1") ;;
+    esac
+    shift
+  done
+  validate_profile "$kind" "$profile" || return
+  require_repository "$repo" || return
+
+  local update=()
+  if [[ "$action" == *-update ]]; then update=(--update); fi
+  if [[ "$kind" == home ]]; then
+    nh home switch "$repo" --configuration "$profile" --impure \
+      "${update[@]}" "${forward[@]}" || return
+  else
+    apply_system "$repo" "$profile" "$action" "$dry" \
+      "${update[@]}" "${forward[@]}" || return
+  fi
+
+  # A failed build or preview must leave the previous selection intact.
+  if ! $dry; then
+    mkdir -p "$state"
+    printf '%s\n' "$profile" > "$state/$kind-profile"
+  fi
+}
+
+update_all() {
+  local repo="$1"
+  shift
+  if [[ "${1:-}" == --dry && $# == 1 ]]; then
+    echo "Plan: refresh flake inputs, apply saved system and home profiles, update installed dev tools."
+    return 0
+  fi
+  if (( $# )); then echo "Usage: update-all [--dry]" >&2; return 2; fi
+  require_repository "$repo" || return
+
+  local failed=()
+  echo "1/4: Refreshing pinned versions"
+  nix flake update --flake "$repo" || failed+=("flake inputs")
+  echo "2/4: Applying the selected NixOS profile"
+  DOTFILES_REFRESH_SYSTEM=1 bash -euo pipefail "$0" system || failed+=("NixOS")
+  echo "3/4: Applying the selected Home Manager profile"
+  bash -euo pipefail "$0" home || failed+=("Home Manager")
+  echo "4/4: Updating installed developer tools"
+  dev-update || failed+=("developer tools")
+  if (( ${#failed[@]} )); then
+    printf 'Updates failed for: %s\n' "${failed[*]}" >&2
+    return 1
+  fi
+  echo "Updates complete."
+}
+
+main() {
+  local action="${1:-help}"
+  if (( $# )); then shift; fi
+  local state="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+  local repo
+  repo=$(repository_path "$state")
+
+  case "$action" in
+    home|home-update|system|system-update)
+      switch_configuration "$action" "$repo" "$state" "$@"
+      ;;
+    update-all) update_all "$repo" "$@" ;;
+    *) usage ;;
+  esac
+}
+
+main "$@"

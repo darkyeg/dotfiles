@@ -45,6 +45,7 @@ if $with_system && [[ ! -f /etc/nixos/configuration.nix ]]; then
   exit 1
 fi
 command -v nix >/dev/null || { echo "Nix is required." >&2; exit 1; }
+export DOTFILES="$repo"
 
 run() {
   if $dry; then printf '  '; printf '%q ' "$@"; printf '\n'; else "$@"; fi
@@ -79,7 +80,7 @@ if $dry; then
 else
   expected_user=$(nix_cmd eval --raw "$repo#homeConfigurations.$profile.config.home.username" --impure)
   if [[ "$expected_user" != "$(id -un)" ]]; then
-    echo "The $profile profile is configured for $expected_user. Adjust home/yoku.nix or use essentials." >&2
+    echo "The $profile profile belongs to $expected_user. Configure your user under users/ or use the default essentials setup." >&2
     exit 1
   fi
   generation=$(nix_cmd build "$repo#homeConfigurations.$profile.activationPackage" \
