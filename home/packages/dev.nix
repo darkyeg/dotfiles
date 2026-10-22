@@ -5,7 +5,6 @@
   home.packages = with pkgs; [
     neovim
     fnm
-    bun
     deno
     python3
     gcc
@@ -18,6 +17,5 @@
     lazygit
     lazydocker
     docker-compose
-    codex
   ];
 }

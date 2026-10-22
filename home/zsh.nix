@@ -40,11 +40,13 @@
       gco = "git checkout";
       gbpurge = ''git branch --merged | grep -Ev "(\*|master|main|develop|staging)" | xargs -n 1 git branch -d'';
       myip = "curl http://ipecho.net/plain && echo";
-      hm = "nh home switch -- --impure";
     };
 
     envExtra = ''
-      export DOTFILES=$HOME/dotfiles
+      if [ -z "''${DOTFILES:-}" ] && [ -r "''${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/repository" ]; then
+        IFS= read -r DOTFILES < "''${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/repository"
+      fi
+      export DOTFILES="''${DOTFILES:-$HOME/dotfiles}"
       export GIT_EDITOR=nvim
       export PATH="$HOME/.local/bin:$PATH"
 

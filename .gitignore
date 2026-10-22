@@ -2,3 +2,12 @@ bin/.local/bin
 personal
 .claude
 home/local.nix
+
+# Nix build output links and local configuration backups
+/result
+/result-*
+*.dotfiles-backup
+
+# Python-generated files
+__pycache__/
+*.py[cod]

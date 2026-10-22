@@ -3,6 +3,8 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Security fixes can reach master before the nixos-unstable channel.
+    nixpkgs-tailscale.url = "github:NixOS/nixpkgs/master";
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -44,7 +46,20 @@
         inherit system;
         config.allowUnfree = true;
       };
+      # Reuse the installer's channel for the small first system rebuild.
+      # Flake-only machines fall back to this repository's pinned nixpkgs.
+      installedChannel = "/nix/var/nix/profiles/per-user/root/channels/nixos";
+      bootstrapSource = if builtins.pathExists "${installedChannel}/nixos/lib/eval-config.nix"
+        then builtins.toPath installedChannel else nixpkgs.outPath;
     in {
+      nixosConfigurations.bootstrap = import (bootstrapSource + "/nixos/lib/eval-config.nix") {
+        inherit system;
+        modules = [
+          /etc/nixos/configuration.nix
+          ./modules/system/bootstrap.nix
+        ];
+      };
+
       nixosConfigurations.desktop = nixpkgs.lib.nixosSystem {
         inherit system;
         specialArgs = { inherit inputs; };
@@ -60,6 +75,17 @@
           spicetify-nix.homeManagerModules.default
           walker.homeManagerModules.default
           ./home/yoku.nix
+        ];
+      };
+
+      homeConfigurations.full = self.homeConfigurations."yoku@desktop";
+      homeConfigurations.essential = home-manager.lib.homeManagerConfiguration {
+        inherit pkgs;
+        extraSpecialArgs = { inherit inputs; };
+        modules = [
+          plasma-manager.homeModules.plasma-manager
+          walker.homeManagerModules.default
+          ./home/essential.nix
         ];
       };
     };

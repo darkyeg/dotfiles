@@ -1,0 +1,74 @@
+action="${1:-help}"
+if (( $# > 0 )); then shift; fi
+state="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+repo="${DOTFILES:-}"
+if [[ -z "$repo" && -r "$state/repository" ]]; then
+  IFS= read -r repo < "$state/repository"
+fi
+repo="${repo:-$HOME/dotfiles}"
+
+if [[ "$action" == update-all ]]; then
+  if [[ "${1:-}" == --dry && $# == 1 ]]; then
+    echo "Plan: refresh flake inputs, apply the saved system profile, apply the saved home profile, update installed dev tools."
+    exit 0
+  fi
+  if (( $# )); then echo "Usage: update-all [--dry]" >&2; exit 2; fi
+  if [[ ! -f "$repo/flake.nix" ]]; then echo "Dotfiles not found at $repo." >&2; exit 1; fi
+  failed=()
+  echo "1/4: Refreshing pinned versions"
+  nix flake update --flake "$repo" || failed+=("flake inputs")
+  echo "2/4: Applying the selected NixOS profile"
+  DOTFILES_REFRESH_SYSTEM=1 bash -euo pipefail "$0" system || failed+=("NixOS")
+  echo "3/4: Applying the selected Home Manager profile"
+  bash -euo pipefail "$0" home || failed+=("Home Manager")
+  echo "4/4: Updating installed developer tools"
+  dev-update || failed+=("developer tools")
+  if (( ${#failed[@]} )); then
+    printf 'Updates failed for: %s\n' "${failed[*]}" >&2
+    exit 1
+  fi
+  echo "Updates complete."
+  exit 0
+fi
+
+case "$action" in
+  home|home-update) kind=home ;;
+  system|system-update) kind=system ;;
+  *)
+    echo "Usage: dotfiles home|home-update|system|system-update [--essential|--full] [nh options]"
+    echo "       dotfiles update-all [--dry]"
+    exit 0
+    ;;
+esac
+profile=full
+if [[ -r "$state/$kind-profile" ]]; then IFS= read -r profile < "$state/$kind-profile"; fi
+forward=()
+dry=false
+for arg in "$@"; do
+  case "$arg" in
+    --essential) profile=essential ;;
+    --full) profile=full ;;
+    --dry|-n) dry=true; forward+=("$arg") ;;
+    *) forward+=("$arg") ;;
+  esac
+done
+case "$profile" in essential|full) ;; *) echo "Invalid saved $kind profile: $profile" >&2; exit 2 ;; esac
+if [[ ! -f "$repo/flake.nix" ]]; then echo "Dotfiles not found at $repo. Set DOTFILES to your checkout." >&2; exit 1; fi
+update=()
+if [[ "$action" == *-update ]]; then update=(--update); fi
+
+if [[ "$kind" == home ]]; then
+  nh home switch "$repo" --configuration "$profile" --impure "${update[@]}" "${forward[@]}"
+elif [[ "$profile" == essential ]]; then
+  if [[ "$action" == system-update || "${DOTFILES_REFRESH_SYSTEM:-}" == 1 ]] &&
+      [[ -d /nix/var/nix/profiles/per-user/root/channels/nixos/nixos ]]; then
+    if ! $dry; then sudo nix-channel --update nixos; fi
+  fi
+  nh os switch "$repo" --hostname bootstrap --impure "${update[@]}" "${forward[@]}"
+else
+  nh os switch "$repo" --impure "${update[@]}" "${forward[@]}"
+fi
+if ! $dry; then
+  mkdir -p "$state"
+  printf '%s\n' "$profile" > "$state/$kind-profile"
+fi

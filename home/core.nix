@@ -1,5 +1,20 @@
-{ pkgs, ... }:
-{
+{ config, lib, pkgs, ... }:
+let
+  dotfilesTool = pkgs.writeShellApplication {
+    name = "dotfiles";
+    runtimeInputs = [ pkgs.nh pkgs.coreutils pkgs.bash ];
+    text = builtins.readFile ./scripts/dotfiles;
+  };
+  shortcuts = lib.mapAttrsToList (name: action:
+    pkgs.writeShellScriptBin name ''exec ${dotfilesTool}/bin/dotfiles ${action} "$@"''
+  ) {
+    hm = "home";
+    hmu = "home-update";
+    os = "system";
+    osu = "system-update";
+    update-all = "update-all";
+  };
+in {
   gtk.gtk3.extraConfig.gtk-enable-primary-paste = false;
   gtk.gtk4.extraConfig.gtk-enable-primary-paste = false;
 
@@ -22,8 +37,10 @@
 
   programs.nh = {
     enable = true;
-    flake = "/home/yoku/dotfiles";
+    flake = "${config.home.homeDirectory}/dotfiles";
   };
+
+  home.packages = [ dotfilesTool ] ++ shortcuts;
 
   programs.nix-index = {
     enable = true;
