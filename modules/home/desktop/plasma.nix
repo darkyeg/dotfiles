@@ -20,6 +20,8 @@ in
     configFile = {
       kdeglobals.General = {
         BrowserApplication = "brave-browser.desktop";
+        TerminalApplication = "ghostty";
+        TerminalService = "com.mitchellh.ghostty.desktop";
         font = "${config.custom.font.ui},12,-1,5,50,0,0,0,0,0";
         fixed = "${config.custom.font.mono},13,-1,5,50,0,0,0,0,0";
         menuFont = "${config.custom.font.ui},11,-1,5,50,0,0,0,0,0";
@@ -32,6 +34,8 @@ in
     };
 
     shortcuts."org.kde.krunner.desktop"."_launch" = [ "Alt+F2" "Alt+Shift+F2" ];
+    shortcuts."services/com.mitchellh.ghostty.desktop"."_launch" = "Ctrl+Alt+T";
+    shortcuts."services/org.kde.konsole.desktop"."_launch" = [];
 
     shortcuts.kwin = {
       "Switch to Desktop 1" = "Ctrl+Alt+1";

@@ -1,5 +1,12 @@
 { config, ... }:
 {
+  home.sessionVariables.TERMINAL = "ghostty";
+
+  xdg.terminal-exec = {
+    enable = true;
+    settings.default = [ "com.mitchellh.ghostty.desktop" ];
+  };
+
   programs.ghostty = {
     enable = true;
     settings = {
