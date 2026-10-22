@@ -1,20 +1,16 @@
 { config, ... }:
-let
-  themes = {
-    gruvbox = { dark = "Gruvbox Dark Hard"; light = "Gruvbox Light Hard"; };
-    rose-pine = { dark = "Rose Pine"; light = "Rose Pine Dawn"; };
-    catppuccin = { dark = "Catppuccin Mocha"; light = "Catppuccin Latte"; };
-  };
-  fallback = { dark = "Gruvbox Dark Hard"; light = "Gruvbox Light Hard"; };
-  t = themes.${config.custom.theme} or fallback;
-in {
+{
   programs.ghostty = {
     enable = true;
     settings = {
-      theme = t.${config.custom.colorScheme};
+      config-file = "?${config.home.homeDirectory}/.config/dotfiles/ghostty-theme";
       font-family = config.custom.font.mono;
       font-size = 13;
+      # Keep Ghostty's GTK header controls, including the new-tab button.
       window-decoration = "client";
+      # Reload both the terminal palette and GTK toolbar colors together.
+      window-theme = "ghostty";
+      gtk-custom-css = "${config.home.homeDirectory}/.local/state/dotfiles-theme/current/gtk.css";
       shell-integration-features = "no-cursor,sudo,no-title";
       cursor-style = "block";
       adjust-cell-height = "35%";

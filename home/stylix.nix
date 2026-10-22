@@ -68,11 +68,14 @@ in {
       size = 24;
     };
 
+    targets.gtk.enable = lib.mkDefault false;
+    targets.kde.enable = lib.mkDefault false;
+    targets.zed.enable = lib.mkDefault false;
+    targets.vesktop.enable = false;
+    targets.rofi.enable = false;
     targets.tmux.enable = false;
     targets.ghostty.enable = false;
     targets.spicetify.enable = false;
     targets.vscode.enable = false;
   };
-
-  gtk.gtk4.theme = null;
 }

@@ -99,6 +99,19 @@ let
     "[yaml]"."editor.defaultFormatter" = "redhat.vscode-yaml";
   };
 
+  defaultKeybindings = [
+    { key = "ctrl+k ctrl+t"; command = "workbench.action.selectTheme"; }
+    { key = "ctrl+p"; command = "workbench.action.quickOpen"; }
+    { key = "ctrl+shift+p"; command = "workbench.action.showCommands"; }
+    { key = "ctrl+`"; command = "workbench.action.terminal.toggleTerminal"; }
+    { key = "ctrl+b"; command = "workbench.action.toggleSidebarVisibility"; }
+    { key = "alt+up"; command = "editor.action.moveLinesUpAction"; when = "editorTextFocus && !editorReadonly"; }
+    { key = "alt+down"; command = "editor.action.moveLinesDownAction"; when = "editorTextFocus && !editorReadonly"; }
+  ];
+
+  keybindingsSeed = pkgs.writeText "vscode-keybindings-seed.json"
+    (builtins.toJSON defaultKeybindings);
+
   seedFile = pkgs.writeText "vscode-settings-seed.json"
     (builtins.toJSON defaultSettings);
 in {
@@ -136,26 +149,22 @@ in {
         ms-vscode.cmake-tools
         twxs.cmake
       ];
-
-      keybindings = [
-        { key = "ctrl+k ctrl+t"; command = "workbench.action.selectTheme"; }
-        { key = "ctrl+p"; command = "workbench.action.quickOpen"; }
-        { key = "ctrl+shift+p"; command = "workbench.action.showCommands"; }
-        { key = "ctrl+`"; command = "workbench.action.terminal.toggleTerminal"; }
-        { key = "ctrl+b"; command = "workbench.action.toggleSidebarVisibility"; }
-        { key = "alt+up"; command = "editor.action.moveLinesUpAction"; when = "editorTextFocus && !editorReadonly"; }
-        { key = "alt+down"; command = "editor.action.moveLinesDownAction"; when = "editorTextFocus && !editorReadonly"; }
-      ];
     };
   };
 
-  home.activation.seedVscodeSettings = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    target="$HOME/.config/Code/User/settings.json"
-    if [ ! -e "$target" ]; then
-      mkdir -p "$(dirname "$target")"
-      cp ${seedFile} "$target"
-      chmod u+w "$target"
-    fi
+  home.activation.seedVscodeSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+    # Seed writable files once. Future UI edits survive Home Manager switches.
+    seed_vscode_file() {
+      local source="$1" target="$2"
+      if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+        run mkdir -p "$(dirname "$target")"
+        run cp "$source" "$target"
+        run chmod u+w "$target"
+      fi
+    }
+    seed_vscode_file ${seedFile} "$HOME/.config/Code/User/settings.json"
+    seed_vscode_file ${keybindingsSeed} "$HOME/.config/Code/User/keybindings.json"
+    unset -f seed_vscode_file
   '';
 
   home.activation.refreshKdeMenu = lib.hm.dag.entryAfter [ "linkGeneration" ] ''

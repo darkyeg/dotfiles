@@ -1,4 +1,4 @@
-{ ... }:
+{ config, ... }:
 {
   imports = [
     ./options.nix
@@ -29,10 +29,11 @@
   ];
 
   custom.themeAuto.enable = true;
+  custom.themeAuto.mode = "solar";
   custom.font.mono = "JetBrainsMono Nerd Font";
 
   home.username = "yoku";
-  home.homeDirectory = "/home/yoku";
+  home.homeDirectory = "/home/${config.home.username}";
   home.stateVersion = "25.11";
   home.sessionVariables.EDITOR = "nvim";
 

@@ -1,5 +1,10 @@
-{ ... }:
+{ config, ... }:
 {
+  xdg.desktopEntries.plasma-manager-commands.exec = "${config.programs.walker.package}/bin/walker";
+  xdg.dataFile."applications/plasma-manager-commands.desktop".source =
+    config.lib.file.mkOutOfStoreSymlink
+      "${config.home.profileDirectory}/share/applications/plasma-manager-commands.desktop";
+
   programs.plasma = {
     enable = true;
 
@@ -9,12 +14,19 @@
     };
 
     configFile = {
+      kdeglobals.General = {
+        font = "${config.custom.font.ui},12,-1,5,50,0,0,0,0,0";
+        fixed = "${config.custom.font.mono},13,-1,5,50,0,0,0,0,0";
+        menuFont = "${config.custom.font.ui},11,-1,5,50,0,0,0,0,0";
+      };
       kwinrc."TabBox".LayoutName = "informative";
       kwinrc."TabBox".HighlightWindows = false;
       kwinrc."TabBox".DelayTime = 0;
       kwinrc."Plugins".slideEnabled = false;
       kwinrc."Plugins".fadeEnabled = false;
     };
+
+    shortcuts."org.kde.krunner.desktop"."_launch" = [ "Alt+F2" "Alt+Shift+F2" ];
 
     shortcuts.kwin = {
       "Switch to Desktop 1" = "Ctrl+Alt+1";
@@ -36,12 +48,9 @@
 
     hotkeys.commands.launch-walker = {
       name = "Walker";
-      # Ctrl+Space clashes with the KDE / ibus input-method switcher and
-      # with IDE autocomplete on VS Code / JetBrains. Meta (Super) + Space
-      # matches the Spotlight / GNOME-Activities convention most users
-      # already have muscle memory for and is unbound on stock Plasma.
-      key = "Meta+Space";
-      command = "walker";
+      key = "Alt+Space";
+      command = "${config.programs.walker.package}/bin/walker";
+      logs.enabled = false;
     };
   };
 }

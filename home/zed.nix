@@ -1,7 +1,5 @@
 { config, lib, ... }:
-let
-  fnmBin = "${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin";
-in {
+{
   programs.zed-editor = {
     enable = true;
     mutableUserSettings = true;
@@ -23,6 +21,7 @@ in {
     ];
 
     userSettings = {
+      buffer_font_family = config.custom.font.mono;
       buffer_font_size = lib.mkForce 17;
       ui_font_size = lib.mkForce 16;
       ui_font_family = lib.mkForce ".ZedSans";
@@ -70,7 +69,7 @@ in {
         claude-acp = {
           type = "registry";
           env = {
-            CLAUDE_CODE_EXECUTABLE = "${fnmBin}/claude";
+            CLAUDE_CODE_EXECUTABLE = "${config.home.homeDirectory}/.local/bin/claude";
           };
         };
       };
